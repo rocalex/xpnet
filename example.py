@@ -1,6 +1,7 @@
 from xpnet.operations import createXpApp
 from xpnet.testing.resources import getTemporaryAccount, createDummyAsset
 from xpnet.testing.setup import getAlgodClient
+from xpnet.utils import getBalances
 
 
 def main():
@@ -29,7 +30,11 @@ def main():
         tx_fees=0
     )
 
-    print("Alice is setting up and funding NFT auction...")
+    # print("Alice is setting up and funding NFT auction...")
+
+    sellerAlgosBefore = getBalances(client, seller.getAddress())[0]
+
+    print("Alice's algo balance: ", sellerAlgosBefore, " algos")
 
 
 if __name__ == '__main__':

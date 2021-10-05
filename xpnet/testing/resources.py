@@ -12,6 +12,9 @@ from ..utils import waitForTransaction
 FUNDING_AMOUNT = 100_000_000
 
 
+accountList: List[Account] = []
+
+
 def getTemporaryAccount(client: AlgodClient) -> Account:
     global accountList
 
