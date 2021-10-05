@@ -1,6 +1,6 @@
-from pyteal import Txn, TealType
 from pyteal import Approve, compileTeal, Or, Reject
 from pyteal import Cond, Mode, OnComplete, Int, Seq, Bytes
+from pyteal import Txn, App, Btoi
 
 
 def approval_program():
@@ -12,7 +12,12 @@ def approval_program():
     token_key = Bytes("token")
 
     on_create = Seq(
-        # TODO: 
+        App.globalPut(threshold_key, Btoi(Txn.application_args[0])),
+        App.globalPut(action_cnt_key, Btoi(Txn.application_args[1])),
+        App.globalPut(nft_cnt_key, Btoi(Txn.application_args[2])),
+        App.globalPut(tx_fees_key, Btoi(Txn.application_args[3])),
+        App.globalPut(nft_token_key, Txn.application_args[4]),
+        App.globalPut(token_key, Txn.application_args[5]),
         Approve()
     )
 
