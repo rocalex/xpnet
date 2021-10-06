@@ -1,4 +1,4 @@
-from xpnet.operations import createXpApp
+from xpnet.operations import createXpApp, closeXpApp
 from xpnet.testing.resources import getTemporaryAccount, createDummyNFTAsset
 from xpnet.testing.setup import getAlgodClient
 from xpnet.utils import getBalances
@@ -35,6 +35,9 @@ def main():
     sellerAlgosBefore = getBalances(client, seller.getAddress())[0]
 
     print("Alice's algo balance: ", sellerAlgosBefore, " algos")
+
+    print("Alice is closing out the auction....")
+    closeXpApp(client, appID, seller)
 
 
 if __name__ == '__main__':

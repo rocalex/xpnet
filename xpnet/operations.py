@@ -1,7 +1,7 @@
 from typing import Tuple, List
 
-from algosdk.future import transaction
 from algosdk import encoding
+from algosdk.future import transaction
 from algosdk.v2client.algod import AlgodClient
 
 from .account import Account
@@ -182,26 +182,38 @@ def withdraw_nft():
     pass
 
 
-def freeze_nft(client: AlgodClient, appID: int, to: Account, fees: int) -> None:
-    appGlobalState = getAppGlobalState(client, appID)
-
-    nftID = appGlobalState[b"nft_token"]
-
+def freeze_nft(
+        client: AlgodClient,
+        appID: int,
+        funder: Account,
+        nftHolder: Account,
+        receiver: Account,
+        nftID: int,
+        fees: int
+) -> None:
     suggestedParams = client.suggested_params()
 
     appCallTxn = transaction.ApplicationCallTxn(
-        sender=to.getAddress(),
+        sender=funder.getAddress(),
         index=appID,
         on_complete=transaction.OnComplete.NoOpOC,
         app_args=[b"freeze_nft", fees],
         foreign_assets=[nftID],
-        accounts=[],
         sp=suggestedParams,
     )
 
-    signedAppCallTxn = appCallTxn.sign(to.getPrivateKey())
+    fundNftTxn = transaction.AssetTransferTxn(
+        sender=nftHolder.getAddress(),
+        receiver=receiver.getAddress(),
+        index=nftID,
+        amt=1,
+        sp=suggestedParams,
+    )
 
-    client.send_transactions([signedAppCallTxn])
+    signedAppCallTxn = appCallTxn.sign(receiver.getPrivateKey())
+    signedFundNftTxn = fundNftTxn.sign(nftHolder.getPrivateKey())
+
+    client.send_transactions([signedAppCallTxn, signedFundNftTxn])
 
     waitForTransaction(client, appCallTxn.get_txid())
 

@@ -79,35 +79,3 @@ def createDummyNFTAsset(client: AlgodClient, seller: Account = None) -> int:
     response = waitForTransaction(client, signedTxn.get_txid())
     assert response.assetIndex is not None and response.assetIndex > 0
     return response.assetIndex
-
-
-def createDummyFTAsset(client: AlgodClient, total: int, seller: Account = None) -> int:
-    if seller is None:
-        seller = getTemporaryAccount(client)
-
-    randomNumber = randint(0, 999)
-    # this random note reduces the likelihood of this transaction looking like a duplicate
-    randomNote = bytes(randint(0, 255) for _ in range(20))
-
-    txn = transaction.AssetCreateTxn(
-        sender=seller.getAddress(),
-        total=total,  # Fungible tokens have totalIssuance greater than 1
-        decimals=2,  # Fungible tokens typically have decimals greater than 0
-        default_frozen=False,
-        manager="",
-        reserve="",
-        freeze="",
-        clawback=seller.getAddress(),
-        unit_name=f"D{randomNumber}",
-        asset_name=f"Dummy {randomNumber}",
-        url=f"https://dummy.asset/{randomNumber}",
-        note=randomNote,
-        sp=client.suggested_params(),
-    )
-    signedTxn = txn.sign(seller.getPrivateKey())
-
-    client.send_transaction(signedTxn)
-
-    response = waitForTransaction(client, signedTxn.get_txid())
-    assert response.assetIndex is not None and response.assetIndex > 0
-    return response.assetIndex
