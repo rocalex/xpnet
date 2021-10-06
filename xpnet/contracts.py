@@ -27,8 +27,18 @@ def approval_program():
     )
 
     on_call_method = Txn.application_args[0]
+    tx_fees = Btoi(Txn.application_args[1])
+
+    # Freeze NFT, requires approval to transfer
+    on_freeze_nft = Seq(
+        App.globalPut(action_cnt_key, App.globalGet(action_cnt_key) + Int(1)),
+        App.globalPut(tx_fees_key, App.globalGet(tx_fees_key) + tx_fees),
+        Approve()
+    )
+
     on_call = Cond(
         [on_call_method == Bytes("setup"), on_setup],
+        [on_call_method == Bytes("freeze_nft"), on_freeze_nft],
     )
 
     on_delete = Seq(

@@ -1,5 +1,5 @@
 from xpnet.operations import createXpApp
-from xpnet.testing.resources import getTemporaryAccount, createDummyAsset
+from xpnet.testing.resources import getTemporaryAccount, createDummyNFTAsset
 from xpnet.testing.setup import getAlgodClient
 from xpnet.utils import getBalances
 
@@ -13,7 +13,7 @@ def main():
 
     print("Alice is generating an example NFT...")
     nftAmount = 1
-    nftID = createDummyAsset(client, nftAmount, seller)
+    nftID = createDummyNFTAsset(client, seller)
     print("The NFT ID is:", nftID)
 
     print(

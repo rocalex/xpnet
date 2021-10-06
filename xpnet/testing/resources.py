@@ -11,7 +11,6 @@ from ..utils import waitForTransaction
 
 FUNDING_AMOUNT = 100_000_000
 
-
 accountList: List[Account] = []
 
 
@@ -50,30 +49,62 @@ def getTemporaryAccount(client: AlgodClient) -> Account:
     return accountList.pop()
 
 
-def createDummyAsset(client: AlgodClient, total: int, account: Account = None) -> int:
-    if account is None:
-        account = getTemporaryAccount(client)
+def createDummyNFTAsset(client: AlgodClient, seller: Account = None) -> int:
+    if seller is None:
+        seller = getTemporaryAccount(client)
 
     randomNumber = randint(0, 999)
     # this random note reduces the likelihood of this transaction looking like a duplicate
     randomNote = bytes(randint(0, 255) for _ in range(20))
 
     txn = transaction.AssetCreateTxn(
-        sender=account.getAddress(),
-        total=total,
-        decimals=0,
+        sender=seller.getAddress(),
+        total=1,  # NFTs have totalIssuance of exactly 1
+        decimals=0,  # NFTs have decimals of exactly 0
         default_frozen=False,
-        manager=account.getAddress(),
-        reserve=account.getAddress(),
-        freeze=account.getAddress(),
-        clawback=account.getAddress(),
+        manager=seller.getAddress(),
+        reserve=seller.getAddress(),
+        freeze=seller.getAddress(),
+        clawback=seller.getAddress(),
         unit_name=f"D{randomNumber}",
         asset_name=f"Dummy {randomNumber}",
         url=f"https://dummy.asset/{randomNumber}",
         note=randomNote,
         sp=client.suggested_params(),
     )
-    signedTxn = txn.sign(account.getPrivateKey())
+    signedTxn = txn.sign(seller.getPrivateKey())
+
+    client.send_transaction(signedTxn)
+
+    response = waitForTransaction(client, signedTxn.get_txid())
+    assert response.assetIndex is not None and response.assetIndex > 0
+    return response.assetIndex
+
+
+def createDummyFTAsset(client: AlgodClient, total: int, seller: Account = None) -> int:
+    if seller is None:
+        seller = getTemporaryAccount(client)
+
+    randomNumber = randint(0, 999)
+    # this random note reduces the likelihood of this transaction looking like a duplicate
+    randomNote = bytes(randint(0, 255) for _ in range(20))
+
+    txn = transaction.AssetCreateTxn(
+        sender=seller.getAddress(),
+        total=total,  # Fungible tokens have totalIssuance greater than 1
+        decimals=2,  # Fungible tokens typically have decimals greater than 0
+        default_frozen=False,
+        manager="",
+        reserve="",
+        freeze="",
+        clawback=seller.getAddress(),
+        unit_name=f"D{randomNumber}",
+        asset_name=f"Dummy {randomNumber}",
+        url=f"https://dummy.asset/{randomNumber}",
+        note=randomNote,
+        sp=client.suggested_params(),
+    )
+    signedTxn = txn.sign(seller.getPrivateKey())
 
     client.send_transaction(signedTxn)
 

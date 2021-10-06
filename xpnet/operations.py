@@ -1,12 +1,11 @@
 from typing import Tuple
 
-from algosdk import encoding
 from algosdk.future import transaction
 from algosdk.v2client.algod import AlgodClient
 
 from .account import Account
 from .contracts import approval_program, clear_state_program
-from .utils import fullyCompileContract, waitForTransaction
+from .utils import fullyCompileContract, waitForTransaction, getAppGlobalState
 
 APPROVAL_PROGRAM = b""
 CLEAR_STATE_PROGRAM = b""
@@ -161,11 +160,30 @@ def withdraw_nft():
     pass
 
 
-def freeze_erc721():
-    # TODO:
-    pass
+def freeze_nft(client: AlgodClient, appID: int, to: Account, fees: int) -> None:
+    appGlobalState = getAppGlobalState(client, appID)
+
+    nftID = appGlobalState[b"nft_token"]
+
+    suggestedParams = client.suggested_params()
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=to.getAddress(),
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"freeze_nft", fees],
+        foreign_assets=[nftID],
+        accounts=[],
+        sp=suggestedParams,
+    )
+
+    signedAppCallTxn = appCallTxn.sign(to.getPrivateKey())
+
+    client.send_transactions([signedAppCallTxn])
+
+    waitForTransaction(client, appCallTxn.get_txid())
 
 
-def freeze():
+def freeze(client: AlgodClient, appID: int, ) -> None:
     # TODO:
     pass
