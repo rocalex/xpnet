@@ -172,14 +172,37 @@ def withdraw():
     pass
 
 
-def _withdraw_nft():
-    # TODO:
-    pass
+def withdraw_nft(
+        client: AlgodClient,
+        appID: int,
+        nftHolder: Account,
+        nftID: int,
+        fees: int
+) -> None:
+    suggestedParams = client.suggested_params()
 
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=nftHolder.getAddress(),
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"withdraw_nft", fees],
+        foreign_assets=[nftID],
+        sp=suggestedParams,
+    )
 
-def withdraw_nft():
-    # TODO:
-    pass
+    destroyNftTxn = transaction.AssetConfigTxn(
+        sender=nftHolder.getAddress(),
+        sp=suggestedParams,
+        index=nftID,
+        strict_empty_address_check=False
+    )
+
+    signedAppCallTxn = appCallTxn.sign(nftHolder.getPrivateKey())
+    signedDestroyNftTxn = destroyNftTxn.sign(nftHolder.getPrivateKey())
+
+    client.send_transactions([signedAppCallTxn, signedDestroyNftTxn])
+
+    waitForTransaction(client, appCallTxn.get_txid())
 
 
 def freeze_nft(
@@ -202,7 +225,7 @@ def freeze_nft(
         sp=suggestedParams,
     )
 
-    fundNftTxn = transaction.AssetTransferTxn(
+    transferNftTxn = transaction.AssetTransferTxn(
         sender=nftHolder.getAddress(),
         receiver=receiver.getAddress(),
         index=nftID,
@@ -211,9 +234,9 @@ def freeze_nft(
     )
 
     signedAppCallTxn = appCallTxn.sign(receiver.getPrivateKey())
-    signedFundNftTxn = fundNftTxn.sign(nftHolder.getPrivateKey())
+    signedTransferNftTxn = transferNftTxn.sign(nftHolder.getPrivateKey())
 
-    client.send_transactions([signedAppCallTxn, signedFundNftTxn])
+    client.send_transactions([signedAppCallTxn, signedTransferNftTxn])
 
     waitForTransaction(client, appCallTxn.get_txid())
 
