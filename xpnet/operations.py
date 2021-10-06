@@ -1,6 +1,7 @@
-from typing import Tuple
+from typing import Tuple, List
 
 from algosdk.future import transaction
+from algosdk import encoding
 from algosdk.v2client.algod import AlgodClient
 
 from .account import Account
@@ -73,6 +74,27 @@ def createXpApp(
     response = waitForTransaction(client, signedTxn.get_txid())
     assert response.applicationIndex is not None and response.applicationIndex > 0
     return response.applicationIndex
+
+
+def closeXpApp(client: AlgodClient, appID: int, closer: Account):
+    appGlobalState = getAppGlobalState(client, appID)
+
+    nftID = appGlobalState[b"nft_id"]
+
+    accounts: List[str] = [encoding.encode_address(appGlobalState[b"seller"])]
+
+    deleteTxn = transaction.ApplicationDeleteTxn(
+        sender=closer.getAddress(),
+        index=appID,
+        accounts=accounts,
+        foreign_assets=[nftID],
+        sp=client.suggested_params()
+    )
+    signedDeleteTxn = deleteTxn.sign(closer.getPrivateKey())
+
+    client.send_transaction(signedDeleteTxn)
+
+    waitForTransaction(client, signedDeleteTxn.get_txid())
 
 
 def validate_action():
