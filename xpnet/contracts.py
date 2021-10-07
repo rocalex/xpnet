@@ -29,6 +29,11 @@ def approval_program():
         App.globalPut(tx_fees_key, Int(0)),
         App.globalPut(nft_cnt_key, Int(0)),
 
+        # TODO:
+        # for (uint i = 0; i < _nft_whitelist.length; i++) {
+        # 	nft_whitelist[address(_nft_whitelist[i])] = 2;
+        # }
+
         # threshold = _threshold;
         # nft_token = _nft_token;
         # token = _token;
