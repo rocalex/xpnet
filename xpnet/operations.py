@@ -35,12 +35,11 @@ def getContracts(client: AlgodClient) -> Tuple[bytes, bytes]:
 def createXpApp(
         client: AlgodClient,
         sender: Account,
+        validators: List[Account],
+        nft_whitelist: List[str],
         threshold: int,
-        action_cnt: int,
-        nft_cnt: int,
-        tx_fees: int,
-        nft_token: int,
-        token: int
+        nft_id: int,
+        token_id: int,
 ) -> int:
     approval, clear = getContracts(client)
 
@@ -49,11 +48,8 @@ def createXpApp(
 
     app_args = [
         threshold,
-        action_cnt,
-        nft_cnt,
-        tx_fees,
-        nft_token,
-        token,
+        nft_id,
+        token_id,
     ]
 
     txn = transaction.ApplicationCreateTxn(
@@ -63,6 +59,8 @@ def createXpApp(
         clear_program=clear,
         global_schema=globalSchema,
         local_schema=localSchema,
+        accounts=[validator.getAddress() for validator in validators],
+        foreign_assets=nft_whitelist,
         app_args=app_args,
         sp=client.suggested_params(),
     )
@@ -158,11 +156,6 @@ def _withdraw_fees():
 
 
 def validate_withdraw_fees():
-    # TODO:
-    pass
-
-
-def _withdraw():
     # TODO:
     pass
 

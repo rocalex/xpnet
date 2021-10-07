@@ -1,4 +1,4 @@
-from pyteal import Approve, compileTeal, Or, Reject
+from pyteal import Approve, compileTeal, Or, Reject, Assert, And
 from pyteal import Cond, Mode, OnComplete, Int, Seq, Bytes
 from pyteal import Txn, App, Btoi
 
@@ -8,16 +8,33 @@ def approval_program():
     action_cnt_key = Bytes("action_cnt")
     nft_cnt_key = Bytes("nft_cnt")
     tx_fees_key = Bytes("tx_fees")
-    nft_token_key = Bytes("nft_token")
-    token_key = Bytes("token")
+    nft_id_key = Bytes("nft_id")
+    token_id_key = Bytes("token_id")
 
     on_create = Seq(
+        # Validators must not be empty
+        Assert(Txn.accounts.length() == 0),
+        # Invalid threshold
+        Assert(
+            And(
+                Txn.application_args[0] <= 0,
+                Txn.application_args[0] > Txn.accounts.length()
+            )
+        ),
+
+        # uint256 private action_cnt = 0;
+        # uint256 private nft_cnt = 0x0;
+        # uint256 private tx_fees = 0x0;
+        App.globalPut(action_cnt_key, Int(0)),
+        App.globalPut(tx_fees_key, Int(0)),
+        App.globalPut(nft_cnt_key, Int(0)),
+
+        # threshold = _threshold;
+        # nft_token = _nft_token;
+        # token = _token;
         App.globalPut(threshold_key, Btoi(Txn.application_args[0])),
-        App.globalPut(action_cnt_key, Btoi(Txn.application_args[1])),
-        App.globalPut(nft_cnt_key, Btoi(Txn.application_args[2])),
-        App.globalPut(tx_fees_key, Btoi(Txn.application_args[3])),
-        App.globalPut(nft_token_key, Txn.application_args[4]),
-        App.globalPut(token_key, Txn.application_args[5]),
+        App.globalPut(nft_id_key, Txn.application_args[1]),
+        App.globalPut(token_id_key, Txn.application_args[2]),
         Approve()
     )
 
