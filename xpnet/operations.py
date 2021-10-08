@@ -41,6 +41,20 @@ def createXpApp(
         nft_id: int,
         token_id: int,
 ) -> int:
+    """Create a XP app.
+
+    Args:
+        client: An algod client.
+        sender: The account that will create the XP application.
+        validators:
+        nft_whitelist:
+        threshold:
+        nft_id:
+        token_id:
+
+    Returns:
+        The ID of the newly created XP app.
+    """
     approval, clear = getContracts(client)
 
     globalSchema = transaction.StateSchema(num_uints=7, num_byte_slices=2)
@@ -75,6 +89,15 @@ def createXpApp(
 
 
 def closeXpApp(client: AlgodClient, appID: int, closer: Account):
+    """Close an XP application.
+
+    Args:
+        client: An algod client.
+        appID: The ID of the XP app.
+        closer: The account initiating the close transaction. This must be
+            either the seller or auction creator if you wish to close the
+            auction before it starts. Otherwise, this can be any account.
+    """
     appGlobalState = getAppGlobalState(client, appID)
 
     nftID = appGlobalState[b"nft_id"]
@@ -95,19 +118,53 @@ def closeXpApp(client: AlgodClient, appID: int, closer: Account):
     waitForTransaction(client, signedDeleteTxn.get_txid())
 
 
-def validate_action():
-    # TODO:
-    pass
-
-
 def validate_transfer():
     # TODO:
     pass
 
 
-def validate_transfer_nft():
-    # TODO:
-    pass
+def validate_transfer_nft(
+        client: AlgodClient,
+        appID: int,
+        sender: Account,
+        receiver: Account,
+        action_id: int,
+        action_data: str
+):
+    """
+    Transfer Foreign NFT
+
+    Args:
+        client:
+        appID:
+        sender:
+        receiver:
+        action_id:
+        action_data:
+    """
+    suggestedParams = client.suggested_params()
+
+    appCallTxn = transaction.ApplicationCallTxn(
+        sender=sender.getAddress(),
+        index=appID,
+        on_complete=transaction.OnComplete.NoOpOC,
+        app_args=[b"validate_transfer_nft", action_id, action_data],
+        accounts=[receiver.getAddress()],
+        sp=suggestedParams,
+    )
+    createNftTxn = transaction.AssetConfigTxn(
+        sender=sender.getAddress(),
+        total=1,
+        decimals=0,
+        sp=suggestedParams,
+    )
+
+    signedAppCallTxn = appCallTxn.sign(sender.getPrivateKey())
+    signedCreateNftTxn = createNftTxn.sign(sender.getPrivateKey())
+
+    client.send_transactions([signedAppCallTxn, signedCreateNftTxn])
+
+    waitForTransaction(client, appCallTxn.get_txid())
 
 
 def validate_unfreeze():
@@ -170,15 +227,24 @@ def withdraw_nft(
         appID: int,
         nftHolder: Account,
         nftID: int,
-        fees: int
+        fee: int
 ) -> None:
+    """Withdraw Foreign NFT
+
+    Args:
+        client: An algod client.
+        appID: The ID of the XP app.
+        nftHolder:
+        nftID:
+        fee: Transaction fee
+    """
     suggestedParams = client.suggested_params()
 
     appCallTxn = transaction.ApplicationCallTxn(
         sender=nftHolder.getAddress(),
         index=appID,
         on_complete=transaction.OnComplete.NoOpOC,
-        app_args=[b"withdraw_nft", fees],
+        app_args=[b"withdraw_nft", fee],
         foreign_assets=[nftID],
         sp=suggestedParams,
     )
